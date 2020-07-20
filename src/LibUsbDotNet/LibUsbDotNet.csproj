@@ -7,7 +7,7 @@
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm64;osx-x64;linux-arm</RuntimeIdentifiers>
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)' == 'true'">$(DefineConstants);WIN</DefineConstants>
     <ExtrasBuildEachRuntimeIdentifier Condition="'$(BuildingInsideVisualStudio)' != 'true' AND ($(TargetFramework.StartsWith('netstandard')) OR $(TargetFramework.StartsWith('netcoreapp')))">true</ExtrasBuildEachRuntimeIdentifier>
-    <DefineConstants>TRACE;WIN;LIBUSBDOTNET;LINUX_ARM64</DefineConstants>
+    <DefineConstants>TRACE;WIN;LIBUSBDOTNET;WIN_X64</DefineConstants>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>LibUsbDotNet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -16,4 +16,29 @@
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
+	<ItemGroup>
+		<!-- Build artifacts, these are available during the Azure pipeline build -->
+		<Content Include="$(SYSTEM_ARTIFACTSDIRECTORY)/drop/runtimes/win-x64/native/*.*">
+			<PackagePath>runtimes/win-x64/native/%(Filename)%(Extension)</PackagePath>
+			<Pack>true</Pack>
+		</Content>
+		<Content Include="$(SYSTEM_ARTIFACTSDIRECTORY)/drop/runtimes/win-x86/native/*.*">
+			<PackagePath>runtimes/win-x86/native/%(Filename)%(Extension)</PackagePath>
+			<Pack>true</Pack>
+		</Content>
+		<Content Include="$(SYSTEM_ARTIFACTSDIRECTORY)/drop/runtimes/osx-x64/native/*.*">
+			<PackagePath>runtimes/osx-x64/native/%(Filename)%(Extension)</PackagePath>
+			<Pack>true</Pack>
+		</Content>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<!-- Because (lib)usb-1.0.[dll,so,dylib] includes a dot in the core assembly name (usb-1.0),
+         name resolution does not work correctly for [DllImport] attributes in .NET Core and we
+         need separate assemblies on Windows and Unix platforms.
+          This means we also need a reference assembly.
+          See https://oren.codes/2018/07/03/create-and-pack-reference-assemblies/
+         and https://oren.codes/2018/07/09/create-and-pack-reference-assemblies-made-easy/ -->
+		<ReferenceAssemblyProjectReference Include="..\refs\LibUsbDotNet.LibUsb.refs.csproj" />
+	</ItemGroup>
 </Project>
